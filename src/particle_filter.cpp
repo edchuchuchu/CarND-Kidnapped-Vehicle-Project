@@ -124,7 +124,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	double sigma_x = std_landmark[0];
 	double sigma_y = std_landmark[1];
 
-    // Update weight for each particle
+	// Update weight for each particle
 	for (unsigned int i = 0; i < particles.size(); ++i) {
 		Particle particle = particles[i];
 		// Predict measurements to all the map landmark within sense range for each particle
