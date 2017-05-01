@@ -124,11 +124,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	double sigma_x = std_landmark[0];
 	double sigma_y = std_landmark[1];
 
+    // Update weight for each particle
 	for (unsigned int i = 0; i < particles.size(); ++i) {
 		Particle particle = particles[i];
-		// Create predicted LandmarkObs
+		// Predict measurements to all the map landmark within sense range for each particle
 		std::vector<LandmarkObs> predicted;
-		// Create predicted LandmarkObs LookUp Table
 		map<int, LandmarkObs> predMap;
 		for (Map::single_landmark_s  landmark:map_landmarks.landmark_list){
 			if (dist(landmark.x_f, landmark.y_f, particle.x, particle.y) <= sensor_range){
