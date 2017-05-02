@@ -58,24 +58,19 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     std_y = std_pos[1];
     std_theta = std_pos[2];
 
+    // Creates a normal (Gaussian) distribution for x, y and theta.
+    normal_distribution<double> dist_x(0, std_x);
+    normal_distribution<double> dist_y(0, std_y);
+    normal_distribution<double> dist_theta(0, std_theta);
+
     for(Particle& particle : particles){
         if (yaw_rate != 0){
             double new_theta = particle.theta + yaw_rate * delta_t;
 
-            // Add measurements to each particle
-            particle.x += velocity/yaw_rate * (sin(new_theta) - sin(particle.theta));
-            particle.y += velocity/yaw_rate * (cos(particle.theta) - cos(new_theta));
-            particle.theta = new_theta;
-
-            // Creates a normal (Gaussian) distribution for x, y and theta.
-            normal_distribution<double> dist_x(particle.x, std_x);
-            normal_distribution<double> dist_y(particle.y, std_y);
-            normal_distribution<double> dist_theta(particle.theta, std_theta);
-
-            // Add random Gaussian noise
-            particle.x = dist_x(gen);
-            particle.y = dist_y(gen);
-            particle.theta = dist_theta(gen);
+            // Add measurements and random Gaussian noise to each particle,
+            particle.x += velocity/yaw_rate * (sin(new_theta) - sin(particle.theta)) + dist_x(gen);
+            particle.y += velocity/yaw_rate * (cos(particle.theta) - cos(new_theta)) + dist_y(gen);
+            particle.theta = new_theta + dist_theta(gen);
         }
     }
 }
@@ -113,9 +108,12 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     //   http://planning.cs.uiuc.edu/node99.html
 
 	// set covariance
-    double sigma_x, sigma_y;
+    double sigma_x, sigma_y, sigma_x_2, sigma_y_2, sigma_xy;
     sigma_x = std_landmark[0];
     sigma_y = std_landmark[1];
+    sigma_x_2 = pow(sigma_x, 2);
+    sigma_y_2 = pow(sigma_y, 2);
+    sigma_xy = 2*M_PI*sigma_x*sigma_y;
 
     for(unsigned int i = 0; i < particles.size(); ++i){
         Particle particle = particles[i];
@@ -150,7 +148,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
             LandmarkObs pred = pred_map[trans_obs.id];
             double diff_x_2 = pow((pred.x - trans_obs.x), 2);
             double diff_y_2 = pow((pred.y - trans_obs.y), 2);
-            double weight = exp(-(diff_x_2/(2*pow(sigma_x, 2)) + diff_y_2/(2*pow(sigma_y, 2))))/(2*M_PI*sigma_x*sigma_y);
+            double weight = exp(-(diff_x_2/(2*sigma_x_2) + diff_y_2/(2*sigma_y_2)))/(sigma_xy);
             total_weight *= weight;
         }
         particles[i].weight = total_weight;
